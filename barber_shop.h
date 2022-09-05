@@ -12,12 +12,16 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <pthread.h>
 
 #define SUCCESS            0
 #define ERR_BASE           0
 
 #define SHM_FILE           "barber_shop_shm"
+#define STAT_SLEEP         false
+#define STAT_DOING         true
 #define CMD_SIZE           (0xff)
+#define BENCH_LIMIT        (10)
 
 
 typedef struct _SHMBUR {
@@ -27,6 +31,9 @@ typedef struct _SHMBUR {
    int a;
 } _SHMBUR;
 
+int barber_num = 3;
 
+
+void *thread_func(void *data);
 
 #endif

@@ -32,17 +32,9 @@ int main(){
       printf("cmd : ");scanf("%s", cmd);
 
       if(!strcmp(cmd, "guest") || !strcmp(cmd, "g")){
-       #ifdef _DEBUG
-         printf("cmd is g !\n");
-       #endif
-
          shmp->cmd = 'g';
       }
       else if(!strcmp(cmd, "close") || !strcmp(cmd, "c")){
-       #ifdef _DEBUG
-         printf("cmd is g !\n");
-       #endif
-
          shmp->cmd = 'c';
          loop = false;
       }
