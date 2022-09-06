@@ -103,12 +103,6 @@ int main(int argc, char *argv[]){
 
          goto ERROR;
       }
-      guest_num++;
-      printf("received guest %d, ", guest_num);
-
-    #ifdef _DEBUG
-      printf("get!\n");
-    #endif
 
       if(shmp->cmd == 'c'){
        #ifdef _DEBUG
@@ -134,6 +128,13 @@ int main(int argc, char *argv[]){
          loop = false;
       }
       else{
+         guest_num++;
+         printf("received guest %d, ", guest_num);
+
+       #ifdef _DEBUG
+         printf("get!\n");
+       #endif
+
          if(sem_getvalue(&(shmp->thread_sem), &val) == -1){
           #ifdef _DEBUG
             printf("sem_getvalue ERROR : %s .\n", strerror(errno));

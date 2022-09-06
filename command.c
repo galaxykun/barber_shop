@@ -28,6 +28,7 @@ int main(){
    char cmd[CMD_SIZE];
    while(loop){
       printf("cmd : ");scanf("%s", cmd);
+      cmd[CMD_SIZE - 1] = 0;
 
       if(!strcmp(cmd, "guest") || !strcmp(cmd, "g")){
          shmp->cmd = 'g';
