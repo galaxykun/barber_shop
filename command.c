@@ -6,8 +6,6 @@ int main(){
    int   shm_fd   =  -1;
    int   loop     =  true;
 
-   _SHMBUR *shmp  = NULL;
-
    shm_fd = shm_open(SHM_FILE, O_RDWR, 0);
    if(shm_fd == -1){
     #ifdef _DEBUG

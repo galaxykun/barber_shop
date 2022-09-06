@@ -1,12 +1,10 @@
 #include "barber_shop.h"
 
-static bool *barber_stat;
+
 
 int main(int argc, char *argv[]){
    int   ret      =  SUCCESS;
    int   shm_fd   =  -1;
-
-   _SHMBUR *shmp  = NULL;
 
    if(argc > 1){
       barber_num = atoi(argv[1]);
@@ -52,6 +50,17 @@ int main(int argc, char *argv[]){
       goto ERROR;
    }
 
+   shmp->queue = (int*)malloc(barber_num * sizeof(int));
+   if(!shmp->queue){
+    #ifdef _DEBUG
+      printf("shmp->queue malloc ERROR : %s .\n", strerror(errno));
+    #endif
+
+      goto ERROR;
+   }
+   shmp->head = 0;
+   shmp->tail = 0;
+
    if (sem_init(&(shmp->process_sem), 1, 0) == -1){
     #ifdef _DEBUG
       printf("sem_init process_sem ERROR : %s .\n", strerror(errno));
@@ -67,8 +76,10 @@ int main(int argc, char *argv[]){
       goto ERROR;
    }
 
+   pthread_mutex_init(&mutex, NULL);
+
    for(int i = 0; i < barber_num; i++){
-      if(ret = pthread_create(&pth[i], NULL, thread_func, NULL)){
+      if(ret = pthread_create(&pth[i], NULL, thread_func, &barber_id)){
        #ifdef _DEBUG
          printf("pthread_create ERROR : %s .\n", strerror(errno));
        #endif
@@ -79,6 +90,7 @@ int main(int argc, char *argv[]){
 
    int   guest_num   =  0;
    int   loop        =  true;
+   int   val         =  0;
    while(loop){
     #ifdef _DEBUG
       printf("wait...\n");
@@ -86,7 +98,7 @@ int main(int argc, char *argv[]){
 
       if(sem_wait(&(shmp->process_sem)) == -1){
        #ifdef _DEBUG
-         printf("sem_init thread_sem loop ERROR : %s .\n", strerror(errno));
+         printf("sem_wait process_sem loop ERROR : %s .\n", strerror(errno));
        #endif
 
          goto ERROR;
@@ -103,10 +115,25 @@ int main(int argc, char *argv[]){
          printf("close!\n");
        #endif
 
+         if(shmp->head != shmp->tail || val == BENCH_LIMIT){
+            printf("guest ");
+            if(val == BENCH_LIMIT){
+               printf("%d ", shmp->queue[shmp->head]);
+               shmp->head++;
+            }
+            while(shmp->head != shmp->tail){
+               printf("%d ", shmp->queue[shmp->head]);
+               shmp->head++;
+
+               if(shmp->head >= BENCH_LIMIT){
+                  shmp->head = 0;
+               }
+            }
+            printf("leaves the bench!\n");
+         }
          loop = false;
       }
       else{
-         int val = 0;
          if(sem_getvalue(&(shmp->thread_sem), &val) == -1){
           #ifdef _DEBUG
             printf("sem_getvalue ERROR : %s .\n", strerror(errno));
@@ -114,14 +141,24 @@ int main(int argc, char *argv[]){
 
             goto ERROR;
          }
-
-         if(val > BENCH_LIMIT){
+ #ifdef _DEBUG
+   printf("\n----------\nval : %d\n----------\n", val);
+ #endif
+         if(val >= BENCH_LIMIT){
           #ifdef _DEBUG
           #endif
 
             printf("FULL! guest %d leave!\n", guest_num);
+            continue;
          }
          else{
+            pthread_mutex_lock(&mutex);
+            shmp->queue[(shmp->tail)++] = guest_num;
+
+            if(shmp->tail >= BENCH_LIMIT){
+               shmp->tail = 0;
+            }
+
             bool  busy  =  true;
             if(val == 0){
                for(int i = 0; i < barber_num; i++){
@@ -135,15 +172,12 @@ int main(int argc, char *argv[]){
                   }
                }
             }
+            pthread_mutex_unlock(&mutex);
 
             if(busy){
                printf("guest %d waiting in the bench.\n", guest_num);
             }
          }
-
-       #ifdef _DEBUG
-         printf("\n----------\nval : %d\n----------\n", val);
-       #endif
       }
 
       if(sem_post(&(shmp->thread_sem)) == -1){
@@ -177,6 +211,9 @@ int main(int argc, char *argv[]){
    if(barber_stat){
       free(barber_stat);
    }
+   if(shmp->queue){
+      free(shmp->queue);
+   }
 
    if(shmp){
       if(ret = munmap(shmp, sizeof(*shmp)) == -1){
@@ -188,9 +225,65 @@ int main(int argc, char *argv[]){
    return ret ? ret : errno;
 }
 
-void *thread_func(void *data){
+void *thread_func(void *arg){
+   pthread_mutex_lock(&mutex);
+   int   index =  (*(int*)arg)++;
+   pthread_mutex_unlock(&mutex);
 
+   while(1){
+      pthread_mutex_lock(&mutex);
+      barber_stat[index] = STAT_SLEEP;
+      pthread_mutex_unlock(&mutex);
 
+      printf("barber number %d is sleep...\n", index);
+
+      if(sem_wait(&(shmp->thread_sem)) == -1){
+       #ifdef _DEBUG
+         printf("sem_wait thread_sem loop thread_func ERROR : %s .\n", strerror(errno));
+       #endif
+
+         pthread_exit(NULL);
+      }
+
+      if(shmp->cmd == 'c'){
+       #ifdef _DEBUG
+         printf("barber %d is exit!\n", index);
+       #endif
+
+         if(sem_post(&(shmp->thread_sem)) == -1){
+          #ifdef _DEBUG
+            printf("sem_post thread_sem ERROR : %s .\n", strerror(errno));
+          #endif
+
+            pthread_exit(NULL);
+         }
+         break;
+      }
+      else{
+         pthread_mutex_lock(&mutex);
+         int guest_num = shmp->queue[(shmp->head)++];
+
+         if(shmp->head >= BENCH_LIMIT){
+            shmp->head = 0;
+         }
+
+         barber_stat[index] = STAT_DOING;
+         pthread_mutex_unlock(&mutex);
+
+         printf("barber %d is serving guest %d .\n", index, guest_num);
+
+         //do something
+       //#ifdef _DEBUG
+         #include <time.h>
+         srand(time(NULL));
+         for(int i = 0; i <= 100;){
+            printf("barber %d is %3d complete...\n", index, i);
+            i += 10;
+            sleep(rand() % 5);
+         }
+       //#endif
+      }
+   }
 
 
    pthread_exit(NULL);

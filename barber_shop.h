@@ -28,11 +28,16 @@ typedef struct _SHMBUR {
    sem_t    process_sem;
    sem_t    thread_sem;
    char     cmd;
-   int a;
+   int      *queue;
+   int      head;
+   int      tail;
 } _SHMBUR;
 
 int barber_num = 3;
-
+_SHMBUR *shmp  = NULL;
+pthread_mutex_t mutex;
+int barber_id  = 0;
+static bool *barber_stat;
 
 void *thread_func(void *data);
 
