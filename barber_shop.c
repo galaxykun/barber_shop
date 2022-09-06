@@ -50,7 +50,7 @@ int main(int argc, char *argv[]){
       goto ERROR;
    }
 
-   shmp->queue = (int*)malloc(barber_num * sizeof(int));
+   shmp->queue = (int*)malloc(BENCH_LIMIT * sizeof(int));
    if(!shmp->queue){
     #ifdef _DEBUG
       printf("shmp->queue malloc ERROR : %s .\n", strerror(errno));
@@ -161,16 +161,14 @@ int main(int argc, char *argv[]){
             }
 
             bool  busy  =  true;
-            if(val == 0){
-               for(int i = 0; i < barber_num; i++){
-                  if(!barber_stat[i]){
-                   #ifdef _DEBUG
-                     printf("%d is not busy!\n", i);
-                   #endif
-                     busy = false;
+            for(int i = 0; i < barber_num && !val; i++){
+               if(!barber_stat[i]){
+                  #ifdef _DEBUG
+                  printf("%d is not busy!\n", i);
+                  #endif
+                  busy = false;
 
-                     break;
-                  }
+                  break;
                }
             }
             pthread_mutex_unlock(&mutex);
@@ -256,7 +254,7 @@ void *thread_func(void *arg){
             printf("sem_post thread_sem ERROR : %s .\n", strerror(errno));
           #endif
 
-            pthread_exit(NULL);
+            exit(0);
          }
          break;
       }
@@ -278,7 +276,7 @@ void *thread_func(void *arg){
          #include <time.h>
          srand(time(NULL));
          for(int i = 0; i <= 100;){
-            printf("barber %d is %3d complete...\n", index, i);
+            printf("barber %d is %3d%% complete...\n", index, i);
             i += 10;
             sleep(rand() % 5);
          }
