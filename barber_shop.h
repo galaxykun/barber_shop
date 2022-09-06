@@ -35,9 +35,9 @@ typedef struct _SHMBUR {
 
 int barber_num = 3;
 _SHMBUR *shmp  = NULL;
-pthread_mutex_t mutex;
 int barber_id  = 0;
 static bool *barber_stat;
+pthread_mutex_t mutex;
 
 void *thread_func(void *data);
 

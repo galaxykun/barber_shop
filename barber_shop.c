@@ -200,6 +200,9 @@ int main(int argc, char *argv[]){
 
 
  ERROR:
+   pthread_mutex_destroy(&mutex);
+   sem_destroy(&shmp->process_sem);
+   sem_destroy(&shmp->thread_sem);
    if(ret || errno){
       printf("ret : %d\nerrno : %s .\n", ret, strerror(errno));
    }
@@ -213,7 +216,6 @@ int main(int argc, char *argv[]){
    if(shmp->queue){
       free(shmp->queue);
    }
-
    if(shmp){
       if(ret = munmap(shmp, sizeof(*shmp)) == -1){
          printf("mummap ERROR : %s .\n", strerror(errno));
