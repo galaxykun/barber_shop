@@ -1,13 +1,13 @@
 #include "barber_shop.h"
 
 
-int main(){
+int main () {
    int   ret      =  SUCCESS;
    int   shm_fd   =  -1;
    int   loop     =  true;
 
    shm_fd = shm_open(SHM_FILE, O_RDWR, 0);
-   if(shm_fd == -1){
+   if (shm_fd == -1) {
     #ifdef _DEBUG
       printf("shm_open ERROR : %s .\n", strerror(errno));
     #endif
@@ -16,7 +16,7 @@ int main(){
    }
 
    shmp = mmap(NULL, sizeof(*shmp), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-   if (shmp == MAP_FAILED){
+   if (shmp == MAP_FAILED) {
     #ifdef _DEBUG
       printf("mmap ERROR : %s .\n", strerror(errno));
     #endif
@@ -26,14 +26,14 @@ int main(){
 
    printf("Please enter the command. (guest : g | close : c)\n");
    char cmd[CMD_SIZE];
-   while(loop){
+   while (loop) {
       printf("cmd : ");scanf("%s", cmd);
       cmd[CMD_SIZE - 1] = 0;
 
-      if(!strcmp(cmd, "guest") || !strcmp(cmd, "g")){
+      if (!strcmp(cmd, "guest") || !strcmp(cmd, "g")) {
          shmp->cmd = 'g';
       }
-      else if(!strcmp(cmd, "close") || !strcmp(cmd, "c")){
+      else if (!strcmp(cmd, "close") || !strcmp(cmd, "c")) {
          shmp->cmd = 'c';
          loop = false;
       }
@@ -46,7 +46,7 @@ int main(){
          continue;
       }
 
-      if(sem_post(&(shmp->process_sem)) == -1){
+      if (sem_post(&(shmp->process_sem)) == -1) {
        #ifdef _DEBUG
          printf("sem_post ERROR : %s .\n", strerror(errno));
        #endif
@@ -61,15 +61,15 @@ int main(){
 
 
  ERROR:
-   if(ret || errno){
+   if (ret || errno) {
       printf("ret : %d\nerrno : %s .\n", ret, strerror(errno));
    }
-   if(shm_fd != -1){
+   if (shm_fd != -1) {
       close(shm_fd);
       shm_unlink(SHM_FILE);
    }
-   if(shmp){
-      if(ret = munmap(shmp, sizeof(*shmp)) == -1){
+   if (shmp) {
+      if (ret = munmap(shmp, sizeof(*shmp)) == -1) {
          printf("mummap ERROR : %s .\n", strerror(errno));
          exit(errno);
       }

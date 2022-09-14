@@ -39,6 +39,6 @@ int barber_id  = 0;
 static bool *barber_stat;
 pthread_mutex_t mutex;
 
-void *thread_func(void *data);
+void *thread_func (void *data);
 
 #endif
